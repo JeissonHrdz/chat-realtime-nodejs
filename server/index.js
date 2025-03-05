@@ -2,19 +2,52 @@ import express from "express";
 import logger from "morgan";
 import { Server } from "socket.io";
 import { createServer } from "node:http";
+import dotenv from "dotenv";
+import { createClient } from "@libsql/client";
+
+dotenv.config();
 
 const port = process.env.PORT ?? 3000;
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  connectionStateRecovery: {}
+});
+
+const db = createClient({
+  url: "libsql://ideal-klaw-jeissonhrdz.turso.io",
+  authToken: process.env.DB_TOKEN
+});
+
+await db.execute(`
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    message TEXT NOT NULL
+  );`);
 
 io.on("connection", (socket) => {
   console.log("New client connected");
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
   });
-});
+
+  socket.on("Chat message", async (msg) => {
+    let result
+    try {
+       result = await db.execute({
+        sql: "INSERT INTO messages (content) VALUES (:msg)",
+        args: { msg }
+      });
+    } catch (e) {
+      console.error(e);
+      return
+    }
+    io.emit('Chat message', msg, result.lastInsertRowId.toString())
+  })
+})
+
 app.use(logger("dev"));
 
 app.get("/", (req, res) => {

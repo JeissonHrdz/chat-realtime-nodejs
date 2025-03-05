@@ -2,6 +2,7 @@
   "name": "chat-realtime",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "dev": "node --watch ./server/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,7 +12,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@libsql/client": "0.14.0",
     "chat-realtime": "file:",
+    "dotenv": "16.4.7",
     "express": "4.21.2",
     "morgan": "1.10.0",
     "socket.io": "4.8.1"
